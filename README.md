@@ -15,6 +15,26 @@ Electric vehicle battery management is becoming increasingly advanced through cu
 
 Efficient battery management plays a vital role in promoting the adoption and widespread use of electric vehicles. It enhances user experience, reduces range anxiety, and contributes to a more sustainable transportation ecosystem.
 
-Let's embrace the advancements in battery management technology and continue to drive the future of clean and efficient transportation!
+## Algorithm
 
-#ElectricVehicles #BatteryManagement #Sustainability #CleanTransportation
+- Start
+- Initialize batteryLevel = 0 and mileage = 0
+- On click of the "Charge" button:
+- If batteryLevel < 100:
+- Increase batteryLevel by 10
+- Update batteryLevel
+- On click of the "Discharge" button:
+- If batteryLevel > 0:
+- Decrease batteryLevel by 5
+- Update batteryLevel
+- On click of the "Drive" button:
+- Get the distance from the distanceInput
+- Calculate batteryUsage = Math.floor(distance / 10) * 5
+- If batteryLevel >= batteryUsage:
+- Decrease batteryLevel by batteryUsage
+- Increase mileage by distance
+- Update batteryLevel
+- Update mileage
+- If batteryLevel < batteryUsage:
+- Show message "Insufficient battery level! Please charge."
+ End
