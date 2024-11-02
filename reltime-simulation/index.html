@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elektrikli Araç Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            padding: 20px;
+            border-bottom: 2px solid #2d2d2d;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .card-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .battery-container {
+            width: 100%;
+            height: 30px;
+            background: #3d3d3d;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .battery-level {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+            border-radius: 15px;
+        }
+
+        .battery-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            mix-blend-mode: difference;
+        }
+
+        .speed-gauge {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status.charging {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status.driving {
+            background: #2196F3;
+            color: white;
+        }
+
+        .status.parked {
+            background: #FF9800;
+            color: white;
+        }
+
+        .consumption-chart {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: #3d3d3d;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="dashboard-title">Elektrikli Araç Gösterge Paneli</h1>
+    
+    <div class="dashboard">
+        <div class="card">
+            <div class="card-title">Pil Durumu</div>
+            <div class="battery-container">
+                <div class="battery-level" id="batteryLevel"></div>
+                <div class="battery-text" id="batteryText">85%</div>
+            </div>
+            <div class="status charging" id="chargingStatus">Şarj Oluyor</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Anlık Hız</div>
+            <div class="speed-gauge">
+                <canvas id="speedGauge"></canvas>
+                <div class="gauge-value" id="speedValue">0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Menzil</div>
+            <div class="card-value" id="range">320 km</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Kalan Mesafe</div>
+            <div class="card-value" id="remainingDistance">285 km</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Enerji Tüketimi</div>
+            <div class="card-value" id="consumption">18.5</div>
+            <div class="card-subtitle">kWh/100km</div>
+            <canvas id="consumptionChart" class="consumption-chart"></canvas>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Sürüş İstatistikleri</div>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="avgSpeed">65</div>
+                    <div class="stat-label">Ortalama Hız (km/s)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalDistance">142</div>
+                    <div class="stat-label">Toplam Mesafe (km)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="efficiency">92</div>
+                    <div class="stat-label">Verimlilik (%)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="regeneration">2.4</div>
+                    <div class="stat-label">Rejenerasyon (kWh)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simüle edilmiş veriler için değişkenler
+        let battery = 85;
+        let speed = 0;
+        let range = 320;
+        let remainingDistance = 285;
+        let isCharging = true;
+        let consumption = 18.5;
+        let consumptionHistory = Array(20).fill(0);
+        let totalDistance = 142;
+        let avgSpeed = 65;
+        let efficiency = 92;
+        let regeneration = 2.4;
+
+        // Tüketim grafiğini çiz
+        function drawConsumptionChart() {
+            const canvas = document.getElementById('consumptionChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Canvas boyutlarını ayarla
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Grafik çizimi
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            
+            consumptionHistory.forEach((value, index) => {
+                const x = (width / consumptionHistory.length) * index;
+                const y = height - (value / 30) * height;
+                ctx.lineTo(x, y);
+            });
+            
+            ctx.lineTo(width, height);
+            ctx.closePath();
+            
+            // Gradyan dolgu
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(76, 175, 80, 0.3)');
+            gradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Çizgi
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Pil seviyesini güncelle
+        function updateBattery() {
+            const batteryLevel = document.getElementById('batteryLevel');
+            const batteryText = document.getElementById('batteryText');
+            const chargingStatus = document.getElementById('chargingStatus');
+
+            if (isCharging) {
+                battery = Math.min(100, battery + 0.1);
+                chargingStatus.textContent = 'Şarj Oluyor';
+                chargingStatus.className = 'status charging';
+            } else {
+                battery = Math.max(0, battery - 0.1);
+                if (speed > 0) {
+                    chargingStatus.textContent = 'Sürüş';
+                    chargingStatus.className = 'status driving';
+                } else {
+                    chargingStatus.textContent = 'Park Halinde';
+                    chargingStatus.className = 'status parked';
+                }
+            }
+
+            batteryLevel.style.width = `${battery}%`;
+            batteryText.textContent = `${battery.toFixed(1)}%`;
+
+            range = (battery / 100) * 380;
+            document.getElementById('range').textContent = `${Math.round(range)} km`;
+        }
+
+        // Hız göstergesini çiz
+        function drawSpeedGauge() {
+            const canvas = document.getElementById('speedGauge');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            canvas.width = 200;
+            canvas.height = 200;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.beginPath();
+            ctx.arc(100, 100, 80, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#3d3d3d';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            const startAngle = -Math.PI * 0.75;
+            const endAngle = startAngle + (Math.PI * 1.5 * (speed / 180));
+
+            ctx.beginPath();
+            ctx.arc(100, 100, 80, startAngle, endAngle);
+            ctx.strokeStyle = '#2196F3';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            document.getElementById('speedValue').textContent = `${Math.round(speed)} km/s`;
+        }
+
+        // İstatistikleri güncelle
+        function updateStats() {
+            // Tüketim verilerini güncelle
+            consumption = Math.max(15, Math.min(22, consumption + (Math.random() - 0.5)));
+            consumptionHistory.shift();
+            consumptionHistory.push(consumption);
+            document.getElementById('consumption').textContent = consumption.toFixed(1);
+
+            // Ortalama hız
+            avgSpeed = Math.max(0, Math.min(120, avgSpeed + (Math.random() - 0.5) * 2));
+            document.getElementById('avgSpeed').textContent = Math.round(avgSpeed);
+
+            // Toplam mesafe
+            if (speed > 0) {
+                totalDistance += speed / 3600;
+                document.getElementById('totalDistance').textContent = Math.round(totalDistance);
+            }
+
+            // Verimlilik
+            efficiency = Math.max(80, Math.min(98, efficiency + (Math.random() - 0.5)));
+            document.getElementById('efficiency').textContent = Math.round(efficiency);
+
+            // Rejenerasyon
+            if (speed > 0 && Math.random() > 0.8) {
+                regeneration += 0.1;
+                document.getElementById('regeneration').textContent = regeneration.toFixed(1);
+            }
+        }
+
+        // Simüle edilmiş veri güncelleme
+        function simulateData() {
+            if (Math.random() > 0.5) {
+                speed = Math.max(0, Math.min(180, speed + (Math.random() * 10 - 5)));
+            }
+
+            if (Math.random() < 0.01) {
+                isCharging = !isCharging;
+            }
+
+            if (!isCharging && speed > 0) {
+                remainingDistance = Math.max(0, remainingDistance - (speed / 3600));
+                document.getElementById('remainingDistance').textContent = `${Math.round(remainingDistance)} km`;
+            }
+
+            updateBattery();
+            drawSpeedGauge();
+            updateStats();
+            drawConsumptionChart();
+        }
+
+        // Sayfa yüklendiğinde başlat
+        window.onload = function() {
+            const speedGauge = document.getElementById('speedGauge');
+            const ctx = speedGauge.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = speedGauge.getBoundingClientRect();
+
+            speedGauge.width = rect.width * dpr;
+            speedGauge.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            setInterval(simulateData, 100);
+        };
+    </script>
+</body>
+</html>
